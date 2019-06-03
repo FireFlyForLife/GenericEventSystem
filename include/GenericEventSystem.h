@@ -112,7 +112,7 @@ namespace cof
 
 		static void SwapToEndAndErase(InvokerFlatMap& invokerMap, const InvokerFlatMap::iterator& iteratorToDelete)
 		{
-			auto& lastElement = *--invokerMap.end();
+			auto& lastElement = invokerMap.back();
 			std::swap(lastElement, *iteratorToDelete);
 			invokerMap.erase(--invokerMap.end());
 		}
