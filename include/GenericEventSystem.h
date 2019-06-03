@@ -38,21 +38,7 @@ namespace cof
 		template<typename TEvent, typename TCallable>
 		std::shared_ptr<CallbackHandle> Register(TCallable&& callable)
 		{
-			(void)callable;
-			//InvokerBase* invoker = new CallableInvoker<TCallable, TArgs...>(std::forward<TCallable>(callable));
-
-			//TemplateTypeId typeId = GetIdFromType<std::decay_t<TEvent>>();
-			//auto it = callbackMap.find(typeId);
-			//if (it == callbackMap.end()) {
-			//	callbackMap.emplace(typeId, InvokerFlatMap{});
-			//	it = callbackMap.find(typeId);
-			//}
-
-			//InvokerFlatMap& invokerMap = it->second;
-			//CallbackHandleId callbackHandleId = ++handleIdCounter;
-			//invokerMap.emplace_back(callbackHandleId, std::unique_ptr<InvokerBase>{invoker});
-
-			//return std::make_shared<CallbackHandle>(callbackHandleId, this);
+			return RegisterImpl<TEvent>(std::forward<TCallable>(callable), typename TEvent::TArgs{});
 		}
 
 		template<typename TEvent, typename TThis, typename TFunc>
@@ -118,6 +104,12 @@ namespace cof
 			return sizeof...(TEventDef) == sizeof...(TArgs) && (std::is_same<TEventDef, TArgs>::value && ...);
 		}
 
+		template<typename TCallable, typename... TEventDef>
+		static constexpr bool IsCallableEventCompatible()
+		{
+			return std::is_invocable_v<TCallable, TEventDef...>;
+		}
+
 		static void SwapToEndAndErase(InvokerFlatMap& invokerMap, const InvokerFlatMap::iterator& iteratorToDelete)
 		{
 			auto& lastElement = *--invokerMap.end();
@@ -125,10 +117,20 @@ namespace cof
 			invokerMap.erase(--invokerMap.end());
 		}
 
-		template<typename Callable, typename... Args>
-		void RegisterImpl()
+		template<typename TEvent, typename TCallable, typename... TArgs>
+		std::shared_ptr<CallbackHandle> RegisterImpl(TCallable callable, TemplateParameterPack<TArgs...>)
 		{
-			
+			static_assert(IsCallableEventCompatible<TCallable, TArgs...>(), "TCallable cannot be called with the arguments that are specified in the TEvent it wants to register to!");
+
+			InvokerBase* invoker = new CallableInvoker<TCallable, TArgs...>{ callable };
+
+			TemplateTypeId typeId = GetIdFromType<std::decay_t<TEvent>>();
+			CallbackHandleId callbackHandleId = ++handleIdCounter;
+			// std::unordered_map::operator[] is noexcept and will create a default object if no entry existed yet.
+			// Thus the following expression is safe.
+			callbackMap[typeId].emplace_back(callbackHandleId, std::unique_ptr<InvokerBase>{invoker});
+
+			return std::make_shared<CallbackHandle>(callbackHandleId, this);
 		}
 
 		template<typename TEvent, typename TThis, typename... TArgs>

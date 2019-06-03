@@ -89,6 +89,11 @@ struct StructWithNumHandler
 	{
 		std::cout << swn.m_num << " and: " << f << "\n";
 	}
+
+	static void FreePrintCallback(StructWithNum swn, float f)
+	{
+		std::cout << "Free function callback: " << swn.m_num << " and: " << f << "\n";
+	}
 };
 
 template<typename... TArgs>
@@ -115,6 +120,7 @@ int main()  // NOLINT(bugprone-exception-escape)
 
 
 	using TestEvent = EventDef<StructWithNum, float>;
+	using FailingEvent = EventDef<float, float, bool>;
 
 	GenericEventSystem eventSystem{};
 
@@ -122,7 +128,10 @@ int main()  // NOLINT(bugprone-exception-escape)
 	StructWithNumHandler swnHandler{};
 	auto memFuncHandle = eventSystem.RegisterMemberFunction<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
 
-	eventSystem.FireEvent<TestEvent>(StructWithNum{65}, 100.50f);
+	eventSystem.Register<TestEvent>(&StructWithNumHandler::FreePrintCallback);
+	//eventSystem.Register<FailingEvent>(&StructWithNumHandler::FreePrintCallback);
+
+	eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
 
 	//EmptyStruct s;
 

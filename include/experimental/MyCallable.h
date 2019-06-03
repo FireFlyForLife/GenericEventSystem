@@ -30,7 +30,11 @@ namespace cof
 		TCall call;
 
 	public:
-		CallableInvoker(TCall&& call) : call(call)
+		CallableInvoker(TCall& callCopy) : call(callCopy)
+		{
+		}
+
+		CallableInvoker(TCall&& call) : call(std::move(call))
 		{
 		}
 
