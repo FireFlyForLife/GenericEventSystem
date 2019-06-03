@@ -5,6 +5,12 @@
  * And a parameter pack container
  */
 
+#include <type_traits>
+#if _MSVC_LANG < 201703L || defined(DISABLE_CPP_17)
+#include <functional>
+#endif
+
+
 namespace cof
 {
 	struct EmptyStruct {};
@@ -70,4 +76,22 @@ namespace cof
 	struct TypeArray {};
 	static_assert(std::is_trivial<TypeArray<int, double&>>::value, "TypeArray should always be trivial");
 
+#if _MSVC_LANG >= 201703L && !defined(DISABLE_CPP_17)
+	template<typename T, typename... Ts>
+	using IsInvocable = std::is_invocable<T, Ts...>;
+
+	template<typename T, typename... Ts>
+	constexpr bool IsInvocable_v = std::is_invocable_v<T, Ts...>;
+#else
+	template <typename F, typename... Args>
+	struct IsInvocable :
+		std::is_constructible<
+			std::function<void(Args ...)>,
+			std::reference_wrapper<typename std::remove_reference<F>::type>
+		>
+	{ };
+
+	template<typename T, typename... Ts>
+	constexpr bool IsInvocable_v = IsInvocable<T, Ts...>::value;
+#endif
 }

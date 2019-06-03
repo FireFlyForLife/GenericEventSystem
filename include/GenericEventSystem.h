@@ -107,7 +107,7 @@ namespace cof
 		template<typename TCallable, typename... TEventDef>
 		static constexpr bool IsCallableEventCompatible()
 		{
-			return std::is_invocable_v<TCallable, TEventDef...>;
+			return IsInvocable_v<TCallable, TEventDef...>;
 		}
 
 		static void SwapToEndAndErase(InvokerFlatMap& invokerMap, const InvokerFlatMap::iterator& iteratorToDelete)
