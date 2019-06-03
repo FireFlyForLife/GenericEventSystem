@@ -101,14 +101,17 @@ void Test(EventDef<TArgs...> test) {
 int main()  // NOLINT(bugprone-exception-escape)
 {
 	InvokerBase* threeFloatsBase = new CallableInvoker<decltype(&PrintThreeFloats), float, float, float>(&PrintThreeFloats);
-	threeFloatsBase->Run({}, 100.0f, 150.65f, 1200.12f);
+	auto tArgs1 = std::make_tuple(100.0f, 150.65f, 1200.12f);
+	threeFloatsBase->Run(&tArgs1);
 
 	InvokerBase* invokerBase = new CallableInvoker<decltype(&TestFuncTest), int, double>(&TestFuncTest);
-	invokerBase->Run({}, 15, 25.5);
+	auto tArgs2 = std::make_tuple(15, 25.5);
+	invokerBase->Run(&tArgs2);
 
 	FunctionStruct testStruct{};
 	InvokerBase* memberInvokerBase = new MemberFunctionInvoker<FunctionStruct, void(FunctionStruct::*)(int, double, char), int, double, char>(&testStruct, &FunctionStruct::Test);
-	memberInvokerBase->Run({}, 7, 94.5, 'c');
+	auto tArgs3 = std::make_tuple(7, 94.5, 'c');
+	memberInvokerBase->Run(&tArgs3);
 
 
 	using TestEvent = EventDef<StructWithNum, float>;

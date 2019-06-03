@@ -38,6 +38,7 @@ namespace cof
 		template<typename TEvent, typename TCallable>
 		std::shared_ptr<CallbackHandle> Register(TCallable&& callable)
 		{
+			(void)callable;
 			//InvokerBase* invoker = new CallableInvoker<TCallable, TArgs...>(std::forward<TCallable>(callable));
 
 			//TemplateTypeId typeId = GetIdFromType<std::decay_t<TEvent>>();
@@ -63,6 +64,7 @@ namespace cof
 		template<typename T>
 		void Unregister(CallbackHandleId handle)
 		{
+			(void)handle;
 			//TemplateTypeId typeId = GetIdFromType<std::decay_t<T>>();
 			//auto it = callbackMap.find(typeId);
 			//assert(it != callbackMap.end());
@@ -77,6 +79,7 @@ namespace cof
 
 		void Unregister(CallbackHandleId handle)
 		{
+			(void)handle;
 			//for (auto it = callbackMap.begin(); it != callbackMap.end(); ++it) {
 			//	InvokerFlatMap& flatMap = it->second;
 			//	for (auto flatmapIt = flatMap.begin(); flatmapIt != flatMap.end(); ++flatmapIt) {
@@ -99,8 +102,11 @@ namespace cof
 			assert(it != callbackMap.end());
 			if(it != callbackMap.end()) {
 				InvokerFlatMap& callableArray = it->second;
+
+				std::tuple<TArgs...> tupleArgs{ std::forward<TArgs>(args)... };
+
 				for (auto& idAndInvoker : callableArray) {
-					idAndInvoker.invoker->Run({}, std::forward<TArgs>(args)...);
+					idAndInvoker.invoker->Run(&tupleArgs);
 				}
 			}
 		}

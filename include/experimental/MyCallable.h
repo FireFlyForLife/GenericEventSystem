@@ -15,7 +15,7 @@ namespace cof
 		InvokerBase() = default;
 		virtual ~InvokerBase() = default;
 
-		virtual void Run(EmptyStruct dummy, ...) = 0;
+		virtual void Run(void* tupleArgs) = 0;
 
 
 		//Disable all the copy/move constructors
@@ -34,21 +34,22 @@ namespace cof
 		{
 		}
 
-		void Run(EmptyStruct dummy, ...) override
+		void Run(void* tupleArgs) override
 		{
-			va_list args;
+			/*va_list args;
 			va_start(args, dummy);
 			std::tuple<TArgs...> tuple;
 			static_for<0, sizeof...(TArgs)> unrolled_loop{};
 			unrolled_loop([&tuple, &args](auto i) {
 				using T = std::tuple_element_t<i.value, std::tuple<TArgs...>>;
 				std::get<i.value>(tuple) = va_arg(args, T);
-			});
+			});*/
 
 			//std::invoke(call, __crt_va_arg(args, TArgs)...);
 
+			auto& tuple = *static_cast<std::tuple<TArgs...>*>(tupleArgs);
 			std::apply(call, tuple);
-			va_end(args);
+			//va_end(args);
 		}
 	};
 
@@ -63,12 +64,21 @@ namespace cof
 			assert(thisPtr != nullptr);
 		}
 
-		void Run(EmptyStruct dummy, ...) override
+		void Run(void* tupleArgs) override
 		{
-			va_list args;
-			va_start(args, dummy);
-			RunImplementation(objectPtr, functionPtr, args);
-			va_end(args);
+			auto& tuple = *static_cast<std::tuple<TArgs...>*>(tupleArgs);
+
+			auto& object_ref_local = *objectPtr;
+			auto function_ptr_local = functionPtr;
+
+			std::apply([&object_ref_local, function_ptr_local](TArgs&&... ts) {
+				(object_ref_local.*function_ptr_local)(std::forward<TArgs>(ts)...);
+			}, std::forward<std::tuple<TArgs...>>(tuple));
+
+			//va_list args;
+			//va_start(args, dummy);
+			//RunImplementation(objectPtr, functionPtr, args);
+			//va_end(args);
 		}
 
 	private:
