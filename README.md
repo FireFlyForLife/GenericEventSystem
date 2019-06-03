@@ -14,6 +14,11 @@ A Event system which holds all the event handlers in one place.
 using namespace cof;
 
 
+void TestFuncTest(int i, double d)
+{
+	std::cout << "Test Function! " << i << " " << d << '\n';
+}
+
 struct StructWithNum
 {
 	uint32_t m_num;
@@ -36,20 +41,26 @@ int main()
 {
 	using TestEvent = EventDef<StructWithNum, float>;
 	using FailingEvent = EventDef<float, float, bool>;
+	using IntDoubleEvent = EventDef<int, double>;
 
 	GenericEventSystem eventSystem{};
 
 	StructWithNumHandler swnHandler{};
-	auto memFuncHandle = eventSystem.RegisterMemberFunction<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
+	{
+		auto memFuncHandle = eventSystem.RegisterMemberFunction<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
 
-	eventSystem.Register<TestEvent>(&StructWithNumHandler::FreePrintCallback);
-	//eventSystem.Register<FailingEvent>(&StructWithNumHandler::FreePrintCallback); //<-- This line will static_assert because the handler does not have the correct function signature
+		auto freeFuncHandle = eventSystem.Register<TestEvent>(&StructWithNumHandler::FreePrintCallback);
+		//eventSystem.Register<FailingEvent>(&StructWithNumHandler::FreePrintCallback); //<-- This line will static_assert because the handler does not have the correct function signature
 
-	eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
+		eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
+	}
+	// func handles will automatically unregister themselves. thus making the next event not handled by any callback:
+	eventSystem.FireEvent<TestEvent>(StructWithNum{ 45 }, 80.27f);
 
-	// This will soon be implemented
-	//eventSystem.Unregister<decltype(&TestFuncTest)>(funcHandle->Id());
-	//eventSystem.Unregister<decltype(&FunctionStruct::Test)>(memFuncHandle->Id());
+	// callbacks can also be manually unregistered by calling `Unregister` like this:
+	auto funcHandle2 = eventSystem.Register<IntDoubleEvent>(&TestFuncTest);
+	eventSystem.FireEvent<IntDoubleEvent>(20, 20.1);
+	eventSystem.Unregister(funcHandle2->Id());
 
 	std::cout << "All tests ran!\n";
 }
