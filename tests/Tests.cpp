@@ -121,25 +121,26 @@ int main()  // NOLINT(bugprone-exception-escape)
 
 	using TestEvent = EventDef<StructWithNum, float>;
 	using FailingEvent = EventDef<float, float, bool>;
+	using IntDoubleEvent = EventDef<int, double>;
 
 	GenericEventSystem eventSystem{};
 
 	//auto funcHandle = eventSystem.Register<decltype(&TestFuncTest), int, double>(&TestFuncTest);
 	StructWithNumHandler swnHandler{};
-	auto memFuncHandle = eventSystem.RegisterMemberFunction<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
+	{
+		auto memFuncHandle = eventSystem.RegisterMemberFunction<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
 
-	eventSystem.Register<TestEvent>(&StructWithNumHandler::FreePrintCallback);
-	//eventSystem.Register<FailingEvent>(&StructWithNumHandler::FreePrintCallback);
+		auto freeFuncHandle = eventSystem.Register<TestEvent>(&StructWithNumHandler::FreePrintCallback);
+		//eventSystem.Register<FailingEvent>(&StructWithNumHandler::FreePrintCallback);
 
+		eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
+	}
 	eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
 
-	//EmptyStruct s;
 
-	//eventSystem.Unregister<decltype(&TestFuncTest)>(funcHandle->Id());
-	//eventSystem.Unregister<decltype(&FunctionStruct::Test)>(memFuncHandle->Id());
-
-	//auto funcHandle2 = eventSystem.Register<decltype(&TestFuncTest), int, double>(&TestFuncTest);
-	//eventSystem.Unregister(funcHandle2->Id());
+	auto funcHandle2 = eventSystem.Register<IntDoubleEvent>(&TestFuncTest);
+	eventSystem.FireEvent<IntDoubleEvent>(20, 20.1);
+	eventSystem.Unregister(funcHandle2->Id());
 
 	std::cout << "All tests ran!\n";
 }

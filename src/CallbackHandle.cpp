@@ -13,7 +13,10 @@ namespace cof
 
 	CallbackHandle::CallbackHandle(CallbackHandle&& other) noexcept : m_id(other.m_id),
 		m_eventSystem(other.m_eventSystem)
-	{}
+	{
+		other.m_id = 0;
+		other.m_eventSystem = nullptr;
+	}
 
 	CallbackHandle& CallbackHandle::operator=(CallbackHandle&& other) noexcept
 	{

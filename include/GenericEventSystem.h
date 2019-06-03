@@ -34,7 +34,6 @@ namespace cof
 
 		GenericEventSystem() = default;
 
-		//TODO: Base the TArgs off of TCallable
 		template<typename TEvent, typename TCallable>
 		std::shared_ptr<CallbackHandle> Register(TCallable&& callable)
 		{
@@ -50,31 +49,35 @@ namespace cof
 		template<typename T>
 		void Unregister(CallbackHandleId handle)
 		{
-			(void)handle;
-			//TemplateTypeId typeId = GetIdFromType<std::decay_t<T>>();
-			//auto it = callbackMap.find(typeId);
+			TemplateTypeId typeId = GetIdFromType<std::decay_t<T>>();
+			auto it = callbackMap.find(typeId);
+			//TODO: Should I still assert?
 			//assert(it != callbackMap.end());
-			//InvokerFlatMap& invokerMap = it->second;
-			//InvokerFlatMap::iterator invokerIt = std::find_if(invokerMap.begin(), invokerMap.end(), [handle](IdAndInvokerBase& a) {
-			//	return a.id == handle;
-			//});
-			//if(invokerIt != invokerMap.end()) {
-			//	SwapToEndAndErase(invokerMap, invokerIt);
-			//}
+			if (it == callbackMap.end())
+				return;
+
+			InvokerFlatMap& invokerMap = it->second;
+			InvokerFlatMap::iterator invokerIt = std::find_if(invokerMap.begin(), invokerMap.end(), [handle](IdAndInvokerBase& a) {
+				return a.id == handle;
+			});
+			//TODO: Should I still assert?
+			//assert(invokerIt != invokerMap.end());
+			if(invokerIt != invokerMap.end()) {
+				SwapToEndAndErase(invokerMap, invokerIt);
+			}
 		}
 
 		void Unregister(CallbackHandleId handle)
 		{
-			(void)handle;
-			//for (auto it = callbackMap.begin(); it != callbackMap.end(); ++it) {
-			//	InvokerFlatMap& flatMap = it->second;
-			//	for (auto flatmapIt = flatMap.begin(); flatmapIt != flatMap.end(); ++flatmapIt) {
-			//		if (flatmapIt->id == handle) {
-			//			SwapToEndAndErase(flatMap, flatmapIt);
-			//			return;
-			//		}
-			//	}
-			//}
+			for (auto it = callbackMap.begin(); it != callbackMap.end(); ++it) {
+				InvokerFlatMap& flatMap = it->second;
+				for (auto flatmapIt = flatMap.begin(); flatmapIt != flatMap.end(); ++flatmapIt) {
+					if (flatmapIt->id == handle) {
+						SwapToEndAndErase(flatMap, flatmapIt);
+						return;
+					}
+				}
+			}
 		}
 
 		// Template parameter @TEvent should be a definition from @EventDef found in "EventDefinition.h"
