@@ -34,14 +34,26 @@ namespace cof
 
 		GenericEventSystem() = default;
 
+		//template<typename TEvent, typename TCallable>
+		//std::shared_ptr<CallbackHandle> Register(TCallable&& callable)
+		//{
+		//	return RegisterImpl<TEvent>(std::forward<TCallable>(callable), typename TEvent::TArgs{});
+		//}
+
+		//template<typename TEvent, typename TThis, typename TFunc>
+		//std::shared_ptr<CallbackHandle> RegisterMemberFunction(TThis* objectPtr, TFunc&& func)
+		//{
+		//	return RegisterMemberFunctionImpl<TEvent>(objectPtr, func);
+		//}
+
 		template<typename TEvent, typename TCallable>
-		std::shared_ptr<CallbackHandle> Register(TCallable&& callable)
+		std::shared_ptr<CallbackHandle> RegisterListener(TCallable&& callable)
 		{
 			return RegisterImpl<TEvent>(std::forward<TCallable>(callable), typename TEvent::TArgs{});
 		}
 
 		template<typename TEvent, typename TThis, typename TFunc>
-		std::shared_ptr<CallbackHandle> RegisterMemberFunction(TThis* objectPtr, TFunc&& func)
+		std::shared_ptr<CallbackHandle> RegisterListener(TThis* objectPtr, TFunc&& func)
 		{
 			return RegisterMemberFunctionImpl<TEvent>(objectPtr, func);
 		}

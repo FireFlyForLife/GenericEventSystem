@@ -1,64 +1,15 @@
-#include <GenericEventSystem.h>
+#include "catch.hpp"
 
+#include <GenericEventSystem.h>
 
 #include <iostream>
 #include <cstdarg>
 #include <tuple>
 #include <utility>
 
+
 using namespace cof;
 
-template<typename T, typename... Ts>
-struct PrintTypes
-{
-	PrintTypes()
-	{
-		std::cout << typeid(T).name() << '\n';
-		PrintTypes<Ts...>{};
-	}
-};
-
-template<typename T>
-struct PrintTypes<T>
-{
-	PrintTypes()
-	{
-		std::cout << typeid(T).name() << '\n';
-	}
-};
-
-//namespace OwnStd
-//{
-//	template<typename F, typename Tuple, size_t... I>
-//	decltype(auto) ForwardCall(Tuple&& t, F&& f, std::index_sequence<I...>)
-//	{
-//		return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
-//	}
-//
-//	template<typename F, typename Tuple>
-//	decltype(auto) Invoke(Tuple&& t, F&& f)
-//	{
-//		constexpr size_t tSize = std::tuple_size_v<std::remove_reference_t<Tuple>>;
-//		return ForwardCall(std::forward<Tuple>(t), std::forward<F>(f), std::make_index_sequence<tSize>());
-//	}
-//}
-
-
-template<typename TRet, typename... TArgs>
-void TypesOfFunctionPtr(TRet(*)(TArgs...))
-{
-	std::cout << typeid(TRet).name() << '\n';
-
-	PrintTypes<TArgs...>{};
-}
-
-template<typename TClass, typename TRet, typename... TArgs>
-void TypesOfMemberFunctionPtr(TRet (TClass::*)(TArgs...))
-{
-	std::cout << typeid(TClass).name() << '\n';
-	std::cout << typeid(TRet).name() << '\n';
-	PrintTypes<TArgs...>{};
-}
 
 void PrintThreeFloats(float f1, float f2, float f3)
 {
@@ -96,14 +47,24 @@ struct StructWithNumHandler
 	}
 };
 
-template<typename... TArgs>
-void Test(EventDef<TArgs...> test) {
-	(void)test;
 
+TEST_CASE("Reference lvalue test") 
+{
+	using FloatRefEvent = EventDef<float&>;
 
+	GenericEventSystem eventSystem{};
+
+	auto handle = eventSystem.RegisterListener<FloatRefEvent>([](float& f) { f = 200.0f; });
+
+	float argument = 100.0f;
+	//Before, argument is 100
+	REQUIRE(std::abs(argument - 100.0f) < 0.1f);
+	eventSystem.FireEvent<FloatRefEvent>(argument);
+	//Afterwards, argument should be 200
+	REQUIRE(std::abs(argument - 200.0f) < 0.1f);
 }
 
-int main()  // NOLINT(bugprone-exception-escape)
+TEST_CASE("Basic test")
 {
 	InvokerBase* threeFloatsBase = new CallableInvoker<decltype(&PrintThreeFloats), float, float, float>(&PrintThreeFloats);
 	auto tArgs1 = std::make_tuple(100.0f, 150.65f, 1200.12f);
@@ -128,9 +89,9 @@ int main()  // NOLINT(bugprone-exception-escape)
 	//auto funcHandle = eventSystem.Register<decltype(&TestFuncTest), int, double>(&TestFuncTest);
 	StructWithNumHandler swnHandler{};
 	{
-		auto memFuncHandle = eventSystem.RegisterMemberFunction<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
+		auto memFuncHandle = eventSystem.RegisterListener<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
 
-		auto freeFuncHandle = eventSystem.Register<TestEvent>(&StructWithNumHandler::FreePrintCallback);
+		auto freeFuncHandle = eventSystem.RegisterListener<TestEvent>(&StructWithNumHandler::FreePrintCallback);
 		//eventSystem.Register<FailingEvent>(&StructWithNumHandler::FreePrintCallback);
 
 		eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
@@ -138,9 +99,17 @@ int main()  // NOLINT(bugprone-exception-escape)
 	eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
 
 
-	auto funcHandle2 = eventSystem.Register<IntDoubleEvent>(&TestFuncTest);
+	auto funcHandle2 = eventSystem.RegisterListener<IntDoubleEvent>(&TestFuncTest);
 	eventSystem.FireEvent<IntDoubleEvent>(20, 20.1);
 	eventSystem.Unregister(funcHandle2->Id());
+
+	{
+		auto genericMemberFunc = eventSystem.RegisterListener<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);
+		auto genericFreeFunc = eventSystem.RegisterListener<TestEvent>(&StructWithNumHandler::FreePrintCallback);
+
+		eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
+	}
+	eventSystem.FireEvent<TestEvent>(StructWithNum{ 65 }, 100.50f);
 
 	std::cout << "All tests ran!\n";
 }
