@@ -34,28 +34,21 @@ namespace cof
 
 		GenericEventSystem() = default;
 
-		//template<typename TEvent, typename TCallable>
-		//std::shared_ptr<CallbackHandle> Register(TCallable&& callable)
-		//{
-		//	return RegisterImpl<TEvent>(std::forward<TCallable>(callable), typename TEvent::TArgs{});
-		//}
-
-		//template<typename TEvent, typename TThis, typename TFunc>
-		//std::shared_ptr<CallbackHandle> RegisterMemberFunction(TThis* objectPtr, TFunc&& func)
-		//{
-		//	return RegisterMemberFunctionImpl<TEvent>(objectPtr, func);
-		//}
-
 		template<typename TEvent, typename TCallable>
-		std::shared_ptr<CallbackHandle> RegisterListener(TCallable&& callable)
+		CallbackHandle RegisterListener(TCallable&& callable)
 		{
 			return RegisterImpl<TEvent>(std::forward<TCallable>(callable), typename TEvent::TArgs{});
 		}
 
 		template<typename TEvent, typename TThis, typename TFunc>
-		std::shared_ptr<CallbackHandle> RegisterListener(TThis* objectPtr, TFunc&& func)
+		CallbackHandle RegisterListener(TThis* objectPtr, TFunc&& func)
 		{
 			return RegisterMemberFunctionImpl<TEvent>(objectPtr, func);
+		}
+
+		void Unregister(const CallbackHandle& handle)
+		{
+			Unregister(handle.EventTypeId(), handle.Id());
 		}
 
 		template<typename T>
@@ -75,6 +68,25 @@ namespace cof
 			//TODO: Should I still assert?
 			//assert(invokerIt != invokerMap.end());
 			if(invokerIt != invokerMap.end()) {
+				SwapToEndAndErase(invokerMap, invokerIt);
+			}
+		}
+
+		void Unregister(TemplateTypeId eventTypeId, CallbackHandleId handle)
+		{
+			auto it = callbackMap.find(eventTypeId);
+			//TODO: Should I still assert?
+			//assert(it != callbackMap.end());
+			if (it == callbackMap.end())
+				return;
+
+			InvokerFlatMap& invokerMap = it->second;
+			InvokerFlatMap::iterator invokerIt = std::find_if(invokerMap.begin(), invokerMap.end(), [handle](IdAndInvokerBase& a) {
+				return a.id == handle;
+				});
+			//TODO: Should I still assert?
+			//assert(invokerIt != invokerMap.end());
+			if (invokerIt != invokerMap.end()) {
 				SwapToEndAndErase(invokerMap, invokerIt);
 			}
 		}
@@ -133,7 +145,7 @@ namespace cof
 		}
 
 		template<typename TEvent, typename TCallable, typename... TArgs>
-		std::shared_ptr<CallbackHandle> RegisterImpl(TCallable callable, TemplateParameterPack<TArgs...>)
+		CallbackHandle RegisterImpl(TCallable callable, TemplateParameterPack<TArgs...>)
 		{
 			static_assert(IsCallableEventCompatible<TCallable, TArgs...>(), "TCallable cannot be called with the arguments that are specified in the TEvent it wants to register to!");
 
@@ -145,11 +157,11 @@ namespace cof
 			// Thus the following expression is safe.
 			callbackMap[typeId].emplace_back(callbackHandleId, std::unique_ptr<InvokerBase>{invoker});
 
-			return std::make_shared<CallbackHandle>(callbackHandleId, this);
+			return CallbackHandle{ callbackHandleId, typeId, this };
 		}
 
 		template<typename TEvent, typename TThis, typename... TArgs>
-		std::shared_ptr<CallbackHandle> RegisterMemberFunctionImpl(TThis* thisPtr, void(TThis::*memberFunctionPtr)(TArgs...)){
+		CallbackHandle RegisterMemberFunctionImpl(TThis* thisPtr, void(TThis::*memberFunctionPtr)(TArgs...)){
 			static_assert(IsEventSignatureSame(typename TEvent::TArgs{}, TemplateParameterPack<TArgs...>{}), 
 				"Event signature needs to be the same as the event handlers function signature (That would make sense right? Because the handler will handle the event with those specific args!)");
 			
@@ -163,7 +175,7 @@ namespace cof
 			// Thus the following expression is safe.
 			callbackMap[typeId].emplace_back(callbackHandleId, std::unique_ptr<InvokerBase>{invoker});
 
-			return std::make_shared<CallbackHandle>(callbackHandleId, this);
+			return CallbackHandle{ callbackHandleId, typeId, this };
 		}
 
 	private:

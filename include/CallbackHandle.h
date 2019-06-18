@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <TemplateTypeId.h>
 
 namespace cof
 {
@@ -11,13 +12,16 @@ namespace cof
 		using CallbackHandleId = uint32_t;
 
 	private:
-		CallbackHandleId m_id;
-		GenericEventSystem* m_eventSystem;
+		CallbackHandleId id;
+		TemplateTypeId eventTypeId;
+		GenericEventSystem* eventSystem;
 
 	public:
-		CallbackHandle() : m_id(0), m_eventSystem(nullptr) 
+		CallbackHandle() 
+			: id(0), eventTypeId(0), eventSystem(nullptr) 
 		{}
-		CallbackHandle(CallbackHandleId id, GenericEventSystem* eventSystem) : m_id(id), m_eventSystem(eventSystem)
+		CallbackHandle(CallbackHandleId id, TemplateTypeId eventTypeId, GenericEventSystem* eventSystem) 
+			: id(id), eventTypeId(eventTypeId), eventSystem(eventSystem)
 		{}
 		~CallbackHandle();
 
@@ -26,7 +30,8 @@ namespace cof
 		CallbackHandle& operator=(const CallbackHandle& other) = delete;
 		CallbackHandle& operator=(CallbackHandle&& other) noexcept;
 
-		CallbackHandleId Id() const { return m_id; }
-		bool IsValid() const { return m_id != 0 && m_eventSystem != nullptr; }
+		CallbackHandleId Id() const { return id; }
+		TemplateTypeId EventTypeId() const { return eventTypeId; }
+		bool IsValid() const { return id != 0 && eventTypeId != 0 && eventSystem != nullptr; }
 	};
 }

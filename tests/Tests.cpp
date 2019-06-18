@@ -101,7 +101,7 @@ TEST_CASE("Basic test")
 
 	auto funcHandle2 = eventSystem.RegisterListener<IntDoubleEvent>(&TestFuncTest);
 	eventSystem.FireEvent<IntDoubleEvent>(20, 20.1);
-	eventSystem.Unregister(funcHandle2->Id());
+	eventSystem.Unregister(funcHandle2);
 
 	{
 		auto genericMemberFunc = eventSystem.RegisterListener<TestEvent>(&swnHandler, &StructWithNumHandler::PrintCallback);

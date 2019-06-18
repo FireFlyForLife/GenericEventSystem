@@ -3,19 +3,24 @@
 
 namespace cof
 {
-
 	CallbackHandle::~CallbackHandle()
 	{
-		if (m_eventSystem) {
-			m_eventSystem->Unregister(m_id);
+		if (eventSystem && eventTypeId != 0 && id != 0) {
+			eventSystem->Unregister(eventTypeId, id);
 		}
+
+		eventSystem = nullptr;
+		eventTypeId = 0;
+		id = 0;
 	}
 
-	CallbackHandle::CallbackHandle(CallbackHandle&& other) noexcept : m_id(other.m_id),
-		m_eventSystem(other.m_eventSystem)
+	CallbackHandle::CallbackHandle(CallbackHandle&& other) noexcept : id(other.id),
+		eventTypeId(other.eventTypeId),
+		eventSystem(other.eventSystem)
 	{
-		other.m_id = 0;
-		other.m_eventSystem = nullptr;
+		other.id = 0;
+		other.eventTypeId = 0;
+		other.eventSystem = nullptr;
 	}
 
 	CallbackHandle& CallbackHandle::operator=(CallbackHandle&& other) noexcept
@@ -23,8 +28,10 @@ namespace cof
 		if (this == &other)
 			return *this;
 
-		m_id = other.m_id; other.m_id = 0;
-		m_eventSystem = other.m_eventSystem; other.m_eventSystem = nullptr;
+		id = other.id; other.id = 0;
+		eventTypeId = other.eventTypeId; other.eventTypeId = 0;
+		eventSystem = other.eventSystem; other.eventSystem = nullptr;
+
 		return *this;
 	}
 }
