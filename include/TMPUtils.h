@@ -94,4 +94,5 @@ namespace cof
 	template<typename T, typename... Ts>
 	constexpr bool IsInvocable_v = IsInvocable<T, Ts...>::value;
 #endif
+
 }
