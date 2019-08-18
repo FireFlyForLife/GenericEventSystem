@@ -52,7 +52,7 @@ namespace cof
 			//std::invoke(call, __crt_va_arg(args, TArgs)...);
 
 			auto& tuple = *static_cast<std::tuple<TArgs...>*>(tupleArgs);
-			std::apply(call, tuple);
+			cof::Apply(call, tuple);
 			//va_end(args);
 		}
 	};
@@ -75,7 +75,7 @@ namespace cof
 			auto& object_ref_local = *objectPtr;
 			auto function_ptr_local = functionPtr;
 
-			std::apply([&object_ref_local, function_ptr_local](TArgs&&... ts) {
+			cof::Apply([&object_ref_local, function_ptr_local](TArgs&&... ts) {
 				(object_ref_local.*function_ptr_local)(std::forward<TArgs>(ts)...);
 			}, std::forward<std::tuple<TArgs...>>(tuple));
 
@@ -86,24 +86,24 @@ namespace cof
 		}
 
 	private:
-		static void RunImplementation(TThis* objectPtr, void (TThis::*functionPtr)(TArgs...), va_list args)
-		{
-			std::tuple<TArgs...> tuple;
-			static_for<0, sizeof...(TArgs)> unrolled_loop{};
-			unrolled_loop([&tuple, &args](auto i) {
-				using T = std::tuple_element_t<i.value, std::tuple<TArgs...>>;
-				T t = va_arg(args, T);
-				std::get<i.value>(tuple) = t;
-			});
-
-			auto& object_ref_local = *objectPtr;
-			auto function_ptr_local = functionPtr;
-
-			//(object_ref_local.*function_ptr_local)(va_arg(args, TArgs)...);
-
-			std::apply([&object_ref_local, function_ptr_local](TArgs&&... ts) {
-				(object_ref_local.*function_ptr_local)(std::forward<TArgs>(ts)...);
-			}, std::forward<std::tuple<TArgs...>>(tuple));
-		}
+		// static void RunImplementation(TThis* objectPtr, void (TThis::*functionPtr)(TArgs...), va_list args)
+		// {
+		// 	std::tuple<TArgs...> tuple;
+		// 	static_for<0, sizeof...(TArgs)> unrolled_loop{};
+		// 	unrolled_loop([&tuple, &args](auto i) {
+		// 		using T = std::tuple_element_t<i.value, std::tuple<TArgs...>>;
+		// 		T t = va_arg(args, T);
+		// 		std::get<i.value>(tuple) = t;
+		// 	});
+		//
+		// 	auto& object_ref_local = *objectPtr;
+		// 	auto function_ptr_local = functionPtr;
+		//
+		// 	//(object_ref_local.*function_ptr_local)(va_arg(args, TArgs)...);
+		//
+		// 	std::apply([&object_ref_local, function_ptr_local](TArgs&&... ts) {
+		// 		(object_ref_local.*function_ptr_local)(std::forward<TArgs>(ts)...);
+		// 	}, std::forward<std::tuple<TArgs...>>(tuple));
+		// }
 	};
 }

@@ -108,7 +108,8 @@ namespace cof
 		template<typename TEvent, typename... TArgs>
 		void FireEvent(TArgs&&... args)
 		{
-			static_assert(IsEventSignatureSame(typename TEvent::TArgs{}, TemplateParameterPack<TArgs...>{}));
+			static_assert(IsEventSignatureSame(typename TEvent::TArgs{}, TemplateParameterPack<TArgs...>{}), 
+				"The arguments supplied are not the same as the arguments defined in TEvent::TArgs");
 
 			TemplateTypeId eventId = GetIdFromType<TEvent>();
 			auto it = callbackMap.find(eventId);
@@ -128,13 +129,7 @@ namespace cof
 		template<typename... TEventDef, typename... TArgs>
 		static constexpr bool IsEventSignatureSame(TemplateParameterPack<TEventDef...>, TemplateParameterPack<TArgs...>)
 		{
-			return sizeof...(TEventDef) == sizeof...(TArgs) && (std::is_same<TEventDef, TArgs>::value && ...);
-		}
-
-		template<typename TCallable, typename... TEventDef>
-		static constexpr bool IsCallableEventCompatible()
-		{
-			return IsInvocable_v<TCallable, TEventDef...>;
+			return sizeof...(TEventDef) == sizeof...(TArgs) && Conjunction_v<std::is_same<TEventDef, TArgs>...>;
 		}
 
 		static void SwapToEndAndErase(InvokerFlatMap& invokerMap, const InvokerFlatMap::iterator& iteratorToDelete)
@@ -147,7 +142,8 @@ namespace cof
 		template<typename TEvent, typename TCallable, typename... TArgs>
 		CallbackHandle RegisterImpl(TCallable callable, TemplateParameterPack<TArgs...>)
 		{
-			static_assert(IsCallableEventCompatible<TCallable, TArgs...>(), "TCallable cannot be called with the arguments that are specified in the TEvent it wants to register to!");
+			static_assert(IsInvocable_v<TCallable, TArgs...>(), 
+				"TCallable cannot be called with the arguments that are specified in the TEvent it wants to register to!");
 
 			InvokerBase* invoker = new CallableInvoker<TCallable, TArgs...>{ callable };
 

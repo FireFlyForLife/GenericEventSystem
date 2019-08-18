@@ -8,6 +8,7 @@
 #include <type_traits>
 #if _MSVC_LANG < 201703L || defined(DISABLE_CPP_17)
 #include <functional>
+#include <invoke.hpp>
 #endif
 
 
@@ -15,6 +16,7 @@ namespace cof
 {
 	struct EmptyStruct {};
 
+#if _MSVC_LANG >= 201703L
 	template <int First, int Last>
 	struct static_for
 	{
@@ -36,6 +38,7 @@ namespace cof
 			(void)fn;
 		}
 	};
+#endif
 
 	template<typename T, typename... Ts>
 	struct TemplateParameterPack
@@ -94,4 +97,39 @@ namespace cof
 	template<typename T, typename... Ts>
 	constexpr bool IsInvocable_v = IsInvocable<T, Ts...>::value;
 #endif
+
+#if _MSVC_LANG >= 201703L
+	//! An alias of std::conjunction. With a C++14 fallback implementation
+	//! @see std::conjunction documentation
+	template<typename... B>
+	using Conjunction = std::conjunction<B...>;
+
+	//! An alias of std::conjunction_v. With a C++14 fallback implementation
+	//! @see std::conjunction_v documentation
+	template<typename... B>
+	inline constexpr bool Conjunction_v = std::conjunction_v<B...>;
+#else
+	//! An alias of std::conjunction. This is the C++14 fallback implementation
+	//! @see std::conjunction documentation
+	template<class...> struct Conjunction : std::true_type { };
+	template<class B1> struct Conjunction<B1> : B1 { };
+	template<class B1, class... Bn>
+	struct Conjunction<B1, Bn...>
+		: std::conditional_t<bool(B1::value), Conjunction<Bn...>, B1> {};
+
+	//! An alias of std::conjunction_v. This is the C++14 fallback implementation
+	//! @see std::conjunction_v documentation
+	template<class... B>
+	constexpr bool Conjunction_v = Conjunction<B...>::value;
+#endif
+
+	template<typename TCallable, typename TTuple>
+	constexpr decltype(auto) Apply(TCallable&& callable, TTuple&& tupleArgs) {
+#if _MSVC_LANG >= 201703L
+		return std::apply(std::forward<TCallable>(callable), std::forward<TTuple>(tupleArgs));
+#else
+		return invoke_hpp::apply(std::forward<TCallable>(callable), std::forward<TTuple>(tupleArgs));
+#endif
+	}
+
 }
