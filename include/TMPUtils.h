@@ -131,5 +131,4 @@ namespace cof
 		return invoke_hpp::apply(std::forward<TCallable>(callable), std::forward<TTuple>(tupleArgs));
 #endif
 	}
-
 }

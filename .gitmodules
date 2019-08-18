@@ -1,0 +1,3 @@
+[submodule "external/SparseToDenseVector"]
+	path = external/SparseToDenseVector
+	url = https://git.cyroxx.de:3000/DevTeam/SparseToDenseVector.git
