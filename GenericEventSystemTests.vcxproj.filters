@@ -21,7 +21,7 @@
     <ClCompile Include="tests\Tests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EventSourceTests.cpp">
+    <ClCompile Include="tests\EventSourceTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

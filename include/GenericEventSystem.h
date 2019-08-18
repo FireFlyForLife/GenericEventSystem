@@ -142,7 +142,7 @@ namespace cof
 		template<typename TEvent, typename TCallable, typename... TArgs>
 		CallbackHandle RegisterImpl(TCallable callable, TemplateParameterPack<TArgs...>)
 		{
-			static_assert(IsInvocable_v<TCallable, TArgs...>(), 
+			static_assert(IsInvocable_v<TCallable, TArgs...>, 
 				"TCallable cannot be called with the arguments that are specified in the TEvent it wants to register to!");
 
 			InvokerBase* invoker = new CallableInvoker<TCallable, TArgs...>{ callable };

@@ -144,7 +144,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EventSourceTests.cpp" />
+    <ClCompile Include="tests\EventSourceTests.cpp" />
     <ClCompile Include="tests\TestMain.cpp" />
     <ClCompile Include="tests\Tests.cpp" />
   </ItemGroup>
